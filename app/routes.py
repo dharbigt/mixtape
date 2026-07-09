@@ -192,6 +192,14 @@ def mixtape_cassette_svg(mixtape_id):
     return Response(svg_content, mimetype='image/svg+xml')
 
 
+@main_bp.route('/login')
+def login():
+    """Render the login page for unauthenticated users."""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    return render_template('index.html', mixtapes=None)
+
+
 @main_bp.route('/login/google')
 def login_google():
     """Redirect to Google for login"""
