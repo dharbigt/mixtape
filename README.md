@@ -1,4 +1,4 @@
-# BlorfCast - Mixtape Edition
+# BlorfMix
 
 A lightweight, minimal mixtape management platform built with Flask. Create, manage, and share mixtapes with M3U playlist generation.
 
@@ -18,6 +18,10 @@ A lightweight, minimal mixtape management platform built with Flask. Create, man
 - **Track Management** - Edit or delete tracks with automatic file cleanup
 - **Public Directory** - Public listing of all mixtapes with M3U playlist links
 - **Admin Dashboard** - Manage mixtapes and tracks
+
+| Tape Index | Edit Tape | Custom Tape Case |
+|:---:|:---:|:---:|
+| ![Tape Index](app/static/screenshots/ss1.png) | ![Edit Tape](app/static/screenshots/ss2.png) | ![Custom Tape Case](app/static/screenshots/ss3.png) |
 
 ## Tech Stack
 
@@ -58,7 +62,7 @@ GOOGLE_CLIENT_ID=<your-google-client-id>
 GOOGLE_CLIENT_SECRET=<your-google-client-secret>
 GOOGLE_REDIRECT_URI=https://your-domain.com/authorize/google
 SECRET_KEY=<your-secret-key>
-APP_NAME=BlorfCast
+APP_NAME=BlorfMix
 DOCROOT=/path/to/podcast.dev.palodes.com
 ```
 
