@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ channel.title }} - {{ app_name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 20px; margin-bottom: 20px; }
+        .user-section { display: flex; gap: 20px; align-items: center; }
+        .profile-pic { width: 50px; height: 50px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; }
+        .user-details h1 { margin: 0; }
+        .page-container { max-width: 1000px; margin: 0 auto; }
+        .links { margin-top: 20px; }
+        .links a { display: inline-block; margin-top: 10px; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; }
+        .links a:hover { background: #0056b3; }
+        .logout-btn { background: #dc3545; }
+        .logout-btn:hover { background: #c82333; }
+        .page-footer { border-top: 1px solid #ccc; padding-top: 20px; margin-top: 40px; text-align: center; color: #666; }
+        .channel-info { border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9; margin: 20px 0; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: Arial, sans-serif; box-sizing: border-box; }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .button-group { display: flex; gap: 10px; margin-top: 20px; }
+        .button-group button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .button-group button:hover { background: #218838; }
+        .button-group button.cancel { background: #6c757d; }
+        .button-group button.cancel:hover { background: #5a6268; }
+        .rss-link { display: inline-block; margin: 10px 0; padding: 10px 20px; background: #ff6600; color: white; text-decoration: none; border-radius: 4px; }
+        .rss-link:hover { background: #e55a00; }
+        
+        .dropzone { 
+            border: 2px dashed #007bff; 
+            padding: 40px; 
+            text-align: center; 
+            border-radius: 8px; 
+            background: #f8f9fa; 
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .dropzone input { display: none; }
+        .dropzone p { margin: 10px 0; }
+        
+        .episodes-section { margin-top: 40px; }
+        .episodes-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .episodes-table thead { background: #f0f0f0; }
+        .episodes-table th { padding: 10px; text-align: left; border: 1px solid #ddd; font-weight: bold; }
+        .episodes-table td { padding: 10px; border: 1px solid #ddd; }
+        
+        .edit-btn, .delete-btn { padding: 5px 10px; margin: 0 5px 0 0; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .edit-btn { background: #007bff; color: white; }
+        .edit-btn:hover { background: #0056b3; }
+        .delete-btn { background: #dc3545; color: white; }
+        .delete-btn:hover { background: #c82333; }
+        
+        .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; border-radius: 8px; width: 80%; max-width: 600px; max-height: 80vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+        .modal-header h2 { margin: 0; }
+        .close-modal { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-modal:hover { color: #000; }
+        .modal-form { display: flex; flex-direction: column; gap: 15px; }
+        .modal-form .form-group { margin: 0; }
+        
+        .throbber { display: none; text-align: center; padding: 20px; }
+        .throbber-spinner { border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .throbber-text { color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+    {% include 'header.html' %}
+    
+    <div class="page-container">
+        <h2>{{ channel.title }}</h2>
+        
+        <div class="channel-info">
+            <p><strong>Channel ID:</strong> <code>{{ channel.podcast_channel }}</code></p>
+            <p><strong>Author:</strong> {{ channel.author }}</p>
+            <p><strong>Category:</strong> {{ channel.category }}</p>
+            <p><strong>Language:</strong> {{ channel.language }}</p>
+            <a href="{{ url_for('main.channel_rss', channel_id=channel.podcast_channel) }}" class="rss-link" target="_blank">📻 View RSS Feed</a>
+        </div>
+        
+        <h3>Edit Channel</h3>
+        <form method="POST" class="channel-form" style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9;">
+            <div class="form-group">
+                <label for="title">Title:</label>
+                <input type="text" id="title" name="title" value="{{ channel.title }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea id="description" name="description">{{ channel.description or '' }}</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="author">Author:</label>
+                <input type="text" id="author" name="author" value="{{ channel.author or '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="authorEmail">Author Email:</label>
+                <input type="email" id="authorEmail" name="authorEmail" value="{{ channel.authorEmail or '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="language">Language:</label>
+                <input type="text" id="language" name="language" value="{{ channel.language or 'en' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="category">Category:</label>
+                <input type="text" id="category" name="category" value="{{ channel.category or '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="subtitle">Subtitle:</label>
+                <input type="text" id="subtitle" name="subtitle" value="{{ channel.subtitle or '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="summary">Summary:</label>
+                <textarea id="summary" name="summary">{{ channel.summary or '' }}</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="copyright">Copyright:</label>
+                <input type="text" id="copyright" name="copyright" value="{{ channel.copyright or '' }}">
+            </div>
+            
+            <div class="button-group">
+                <button type="submit">Save Changes</button>
+                <a href="{{ url_for('main.admin') }}" class="button-group" style="padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">Back to Admin</a>
+            </div>
+        </form>
+        
+        {% if items %}
+        <div class="episodes-section">
+            <h3>Episodes ({{ items|length }})</h3>
+            <div style="overflow-x: auto;">
+                <table class="episodes-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Category</th>
+                            <th>Duration</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>
+                                {% if item.pubDate %}
+                                    {{ item.pubDate | format_vms_date }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ item.title }}</td>
+                            <td>{{ item.author or '-' }}</td>
+                            <td>{{ item.category or '-' }}</td>
+                            <td>{{ item.duration or '-' }}s</td>
+                            <td>
+                                <button type="button" class="edit-btn" onclick="openEditModal('{{ item.podcast_item }}', '{{ item.title }}', '{{ item.author or '' }}', '{{ item.category or '' }}', '{{ item.description or '' }}', '{{ item.subtitle or '' }}', '{{ item.summary or '' }}', '{{ item.keywords or '' }}', '{{ item.duration or 0 }}')">Edit</button>
+                                <button type="button" class="delete-btn" onclick="deleteEpisode('{{ item.podcast_item }}')">Delete</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+        
+        <h3>Add Episode</h3>
+        
+        <div class="dropzone" id="episodeDropzone">
+            <p>📁 Drag and drop an audio file here</p>
+            <p><small>Supported formats: MP3, M4A, AAC</small></p>
+            <input type="file" id="episodeFileInput" accept=".mp3,.m4a,.aac" />
+        </div>
+        
+        <div id="episodeThrobber" class="throbber">
+            <div class="throbber-spinner"></div>
+            <div class="throbber-text">Processing file...</div>
+        </div>
+        
+        <div id="episodeErrorMessage" class="error-message" style="color: #dc3545; padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin: 10px 0; display: none;"></div>
+        <div id="episodeSuccessMessage" class="success-message" style="color: #155724; padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin: 10px 0; display: none;"></div>
+        
+        <form id="episodeForm" style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9; display: none; margin-top: 20px;">
+            <h4>Episode Metadata</h4>
+            
+            <input type="hidden" id="episode_podcast_channel" value="{{ channel.podcast_channel }}">
+            <input type="hidden" id="episode_podcast_item" value="">
+            <input type="hidden" id="episode_pubDate" value="">
+            
+            <div class="form-group">
+                <label for="episode_title">Title:</label>
+                <input type="text" id="episode_title" name="episode_title" placeholder="Episode title" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="episode_description">Description:</label>
+                <textarea id="episode_description" name="episode_description" placeholder="Episode description"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="episode_author">Author:</label>
+                <input type="text" id="episode_author" name="episode_author" placeholder="Episode author">
+            </div>
+            
+            <div class="form-group">
+                <label for="episode_category">Category:</label>
+                <input type="text" id="episode_category" name="episode_category" placeholder="Category">
+            </div>
+            
+            <div class="form-group">
+                <label for="episode_subtitle">Subtitle:</label>
+                <input type="text" id="episode_subtitle" name="episode_subtitle" placeholder="Episode subtitle">
+            </div>
+            
+            <div class="form-group">
+                <label for="episode_summary">Summary:</label>
+                <textarea id="episode_summary" name="episode_summary" placeholder="Episode summary"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="episode_duration">Duration (seconds):</label>
+            <input type="number" id="episode_duration" name="episode_duration" placeholder="Duration in seconds" readonly style="background-color: #e9ecef; cursor: not-allowed;">
+            <div class="form-group">
+                <label for="episode_keywords">Keywords:</label>
+                <input type="text" id="episode_keywords" name="episode_keywords" placeholder="Comma-separated keywords">
+            </div>
+            
+            <div class="button-group">
+                <button type="submit">Create Episode</button>
+                <button type="button" class="cancel" onclick="resetEpisodeForm()">Cancel</button>
+            </div>
+        </form>
+        
+        {% if items %}
+        <div class="episodes-section">
+            <h3>Episodes ({{ items|length }})</h3>
+            <table class="episodes-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Published</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.title }}</td>
+                        <td>{{ item.pubDate or '-' }}</td>
+                        <td>{{ item.duration or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        
+        <div class="links">
+            <a href="{{ url_for('main.admin') }}">Back to Admin</a>
+            <a href="{{ url_for('main.logout') }}">Logout</a>
+        </div>
+    </div>
+    
+    <!-- Edit Episode Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Episode</h2>
+                <span class="close-modal" onclick="closeEditModal()">&times;</span>
+            </div>
+            <form id="editEpisodeForm" class="modal-form">
+                <input type="hidden" id="edit_podcast_item" value="">
+                
+                <div class="form-group">
+                    <label for="edit_title">Title:</label>
+                    <input type="text" id="edit_title" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_author">Author:</label>
+                    <input type="text" id="edit_author">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_category">Category:</label>
+                    <input type="text" id="edit_category">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_description">Description:</label>
+                    <textarea id="edit_description" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: Arial, sans-serif; resize: vertical; min-height: 80px;"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_subtitle">Subtitle:</label>
+                    <input type="text" id="edit_subtitle">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_summary">Summary:</label>
+                    <textarea id="edit_summary" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: Arial, sans-serif; resize: vertical; min-height: 80px;"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_keywords">Keywords:</label>
+                    <input type="text" id="edit_keywords">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_duration">Duration (seconds):</label>
+                    <input type="number" id="edit_duration" readonly style="background-color: #e9ecef; cursor: not-allowed;">
+                </div>
+                
+                <div class="button-group" style="margin-top: 20px;">
+                    <button type="submit" style="background: #28a745;">Save Changes</button>
+                    <button type="button" class="cancel" onclick="closeEditModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {% include 'footer.html' %}
+    
+    <script>
+        const episodeDropzone = document.getElementById('episodeDropzone');
+        const episodeFileInput = document.getElementById('episodeFileInput');
+        const episodeForm = document.getElementById('episodeForm');
+        const episodeErrorMessage = document.getElementById('episodeErrorMessage');
+        const episodeSuccessMessage = document.getElementById('episodeSuccessMessage');
+        const episodeThrobber = document.getElementById('episodeThrobber');
+        const channelId = document.getElementById('episode_podcast_channel').value;
+        
+        // Dropzone setup
+        episodeDropzone.addEventListener('click', () => episodeFileInput.click());
+        
+        episodeDropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            episodeDropzone.style.borderColor = '#0056b3';
+            episodeDropzone.style.background = '#e7f1ff';
+        });
+        
+        episodeDropzone.addEventListener('dragleave', () => {
+            episodeDropzone.style.borderColor = '#007bff';
+            episodeDropzone.style.background = '#f8f9fa';
+        });
+        
+        episodeDropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            episodeDropzone.style.borderColor = '#007bff';
+            episodeDropzone.style.background = '#f8f9fa';
+            if (e.dataTransfer.files.length > 0) {
+                handleEpisodeFile(e.dataTransfer.files[0]);
+            }
+        });
+        
+        episodeFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleEpisodeFile(e.target.files[0]);
+            }
+        });
+        
+        function handleEpisodeFile(file) {
+            episodeErrorMessage.style.display = 'none';
+            episodeSuccessMessage.style.display = 'none';
+            episodeThrobber.style.display = 'none';
+            
+            // Validate file type
+            const validTypes = ['audio/mpeg', 'audio/mp4', 'audio/aac'];
+            if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|m4a|aac)$/i)) {
+                showEpisodeError('Invalid file type. Please upload an MP3, M4A, or AAC file.');
+                return;
+            }
+            
+            // Show throbber
+            episodeThrobber.style.display = 'block';
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('channel_id', channelId);
+            
+            fetch('/api/upload-episode', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Episode upload response:', data);
+                episodeThrobber.style.display = 'none';
+                if (data.error) {
+                    showEpisodeError(data.error);
+                } else {
+                    populateEpisodeForm(data);
+                    episodeForm.style.display = 'block';
+                    episodeSuccessMessage.style.display = 'block';
+                    episodeSuccessMessage.textContent = 'File uploaded! Review and create the episode.';
+                }
+            })
+            .catch(error => {
+                console.error('Upload error:', error);
+                episodeThrobber.style.display = 'none';
+                showEpisodeError('Error uploading file: ' + error.message);
+            });
+        }
+        
+        function populateEpisodeForm(data) {
+            document.getElementById('episode_podcast_item').value = data.podcast_item || '';
+            document.getElementById('episode_pubDate').value = data.pubDate || '';
+            document.getElementById('episode_title').value = data.title || '';
+            document.getElementById('episode_description').value = data.description || '';
+            document.getElementById('episode_author').value = data.author || '';
+            document.getElementById('episode_category').value = data.category || '';
+            document.getElementById('episode_subtitle').value = data.subtitle || '';
+            document.getElementById('episode_summary').value = data.summary || '';
+            document.getElementById('episode_duration').value = data.duration || '';
+            document.getElementById('episode_keywords').value = data.keywords || '';
+        }
+        
+        function resetEpisodeForm() {
+            episodeForm.style.display = 'none';
+            episodeForm.reset();
+            episodeFileInput.value = '';
+            episodeErrorMessage.style.display = 'none';
+            episodeSuccessMessage.style.display = 'none';
+        }
+        
+        function showEpisodeError(message) {
+            episodeErrorMessage.textContent = message;
+            episodeErrorMessage.style.display = 'block';
+        }
+        
+        episodeForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const episodeData = {
+                podcast_channel: channelId,
+                podcast_item: document.getElementById('episode_podcast_item').value,
+                pubDate: parseInt(document.getElementById('episode_pubDate').value) || 0,
+                title: document.getElementById('episode_title').value,
+                description: document.getElementById('episode_description').value,
+                author: document.getElementById('episode_author').value,
+                category: document.getElementById('episode_category').value,
+                subtitle: document.getElementById('episode_subtitle').value,
+                summary: document.getElementById('episode_summary').value,
+                duration: parseInt(document.getElementById('episode_duration').value) || 0,
+                keywords: document.getElementById('episode_keywords').value
+            };
+            
+            fetch('/api/create-episode', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(episodeData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showEpisodeError(data.error);
+                } else {
+                    episodeSuccessMessage.textContent = '✓ Episode created successfully!';
+                    episodeSuccessMessage.style.display = 'block';
+                    resetEpisodeForm();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                }
+            })
+            .catch(error => {
+                showEpisodeError('Error creating episode: ' + error.message);
+            });
+        });
+        
+        // Edit Modal Functions
+        const editModal = document.getElementById('editModal');
+        const editForm = document.getElementById('editEpisodeForm');
+        
+        function openEditModal(podcastItem, title, author, category, description, subtitle, summary, keywords, duration) {
+            document.getElementById('edit_podcast_item').value = podcastItem;
+            document.getElementById('edit_title').value = title;
+            document.getElementById('edit_author').value = author;
+            document.getElementById('edit_category').value = category;
+            document.getElementById('edit_description').value = description;
+            document.getElementById('edit_subtitle').value = subtitle;
+            document.getElementById('edit_summary').value = summary;
+            document.getElementById('edit_keywords').value = keywords;
+            document.getElementById('edit_duration').value = duration;
+            editModal.style.display = 'block';
+        }
+        
+        function closeEditModal() {
+            editModal.style.display = 'none';
+            editForm.reset();
+        }
+        
+        // Close modal when clicking outside it
+        window.addEventListener('click', (e) => {
+            if (e.target === editModal) {
+                closeEditModal();
+            }
+        });
+        
+        // Handle edit form submission
+        editForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const episodeData = {
+                podcast_item: document.getElementById('edit_podcast_item').value,
+                title: document.getElementById('edit_title').value,
+                description: document.getElementById('edit_description').value,
+                author: document.getElementById('edit_author').value,
+                category: document.getElementById('edit_category').value,
+                subtitle: document.getElementById('edit_subtitle').value,
+                summary: document.getElementById('edit_summary').value,
+                keywords: document.getElementById('edit_keywords').value
+            };
+            
+            fetch('/api/update-episode', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(episodeData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                } else {
+                    closeEditModal();
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                alert('Error updating episode: ' + error.message);
+            });
+        });
+        
+        function deleteEpisode(podcastItem) {
+            if (confirm('Are you sure you want to delete this episode?')) {
+                fetch('/api/delete-episode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ podcast_item: podcastItem })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                    } else {
+                        window.location.reload();
+                    }
+                })
+                .catch(error => {
+                    alert('Error deleting episode: ' + error.message);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

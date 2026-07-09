@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ mixtape.title }} - {{ app_name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 20px; margin-bottom: 20px; }
+        .user-section { display: flex; gap: 20px; align-items: center; }
+        .profile-pic { width: 50px; height: 50px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; }
+        .user-details h1 { margin: 0; }
+        .page-container { max-width: 1000px; margin: 0 auto; }
+        .links { margin-top: 20px; }
+        .links a { display: inline-block; margin-top: 10px; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 4px; }
+        .links a:hover { background: #5568d3; }
+        .logout-btn { background: #dc3545 !important; }
+        .logout-btn:hover { background: #c82333 !important; }
+        .page-footer { border-top: 1px solid #ccc; padding-top: 20px; margin-top: 40px; text-align: center; color: #666; }
+        .mixtape-info { border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9; margin: 20px 0; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: Arial, sans-serif; box-sizing: border-box; }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .button-group { display: flex; gap: 10px; margin-top: 20px; }
+        .button-group button { padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .button-group button:hover { background: #5568d3; }
+        .button-group button.cancel { background: #6c757d; }
+        .button-group button.cancel:hover { background: #5a6268; }
+        .m3u-link { display: inline-block; margin: 10px 0; padding: 10px 20px; background: #ff9800; color: white; text-decoration: none; border-radius: 4px; }
+        .m3u-link:hover { background: #e68900; }
+        
+        .dropzone { 
+            border: 2px dashed #667eea; 
+            padding: 40px; 
+            text-align: center; 
+            border-radius: 8px; 
+            background: #f8f9fa; 
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .dropzone input { display: none; }
+        .dropzone p { margin: 10px 0; }
+        .dropzone.dragover { border-color: #5568d3; background: #eef0ff; }
+        
+        .tracks-section { margin-top: 40px; }
+        .tracks-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .tracks-table thead { background: #667eea; color: white; }
+        .tracks-table th { padding: 10px; text-align: left; border: 1px solid #5560cc; font-weight: bold; }
+        .tracks-table td { padding: 10px; border: 1px solid #ddd; }
+        .tracks-table tbody tr { cursor: grab; }
+        .tracks-table tbody tr:active { cursor: grabbing; }
+        .tracks-table tbody tr.sortable-ghost { opacity: 0.4; background: #e7f1ff; }
+        .drag-handle { color: #aaa; font-size: 1.2em; user-select: none; cursor: grab; padding-right: 4px; }
+        .seq-num { color: #888; font-size: 0.85em; min-width: 28px; display: inline-block; text-align: right; }
+        
+        .edit-btn, .delete-btn { padding: 5px 10px; margin: 0 5px 0 0; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .edit-btn { background: #667eea; color: white; }
+        .edit-btn:hover { background: #5568d3; }
+        .delete-btn { background: #dc3545; color: white; }
+        .delete-btn:hover { background: #c82333; }
+        
+        .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; border-radius: 8px; width: 80%; max-width: 600px; max-height: 80vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+        .modal-header h2 { margin: 0; }
+        .close-modal { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-modal:hover { color: #000; }
+        .modal-form { display: flex; flex-direction: column; gap: 15px; }
+        .modal-form .form-group { margin: 0; }
+        
+        .throbber { display: none; text-align: center; padding: 20px; }
+        .throbber-spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .throbber-text { color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+    {% include 'header.html' %}
+    
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px 20px; text-align: center; margin: -20px -20px 20px;">
+        <h1 style="margin: 0; font-size: 2.2em;">{{ app_name }} 🎚️</h1>
+    </div>
+    
+    <div class="page-container">
+        <h2>{{ mixtape.title }}</h2>
+        {% if mixtape.author %}<p style="color: #666; margin: -10px 0 20px; font-size: 1.1em;">{{ mixtape.author }}</p>{% endif %}
+        
+        <h3>Edit Mixtape</h3>
+        <form method="POST" class="mixtape-form" style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9;">
+            <div class="form-group">
+                <label for="title">Title:</label>
+                <input type="text" id="title" name="title" value="{{ mixtape.title }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea id="description" name="description">{{ mixtape.description or '' }}</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="author">Creator:</label>
+                <input type="text" id="author" name="author" value="{{ mixtape.author or '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="language">Language:</label>
+                <input type="text" id="language" name="language" value="{{ mixtape.language or 'en' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="category">Genre:</label>
+                <select id="category" name="category" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: Arial, sans-serif; background: white;">
+                    <option value=""></option>
+                    {% set genres = [
+                        "A Cappella","Abstract","Acid","Acid Jazz","Acid Punk","Acoustic",
+                        "Alternative","Alternative Rock","Ambient","Anime","Art Rock",
+                        "Audio Theatre","Audiobook","Avantgarde","Ballad","Bass","Beat",
+                        "Bebop","Big Band","Black Metal","Bluegrass","Blues","Booty Bass",
+                        "BritPop","Cabaret","Celtic","Chamber Music","Chanson","Chorus",
+                        "Christian Gangsta Rap","Christian Rap","Christian Rock","Classic Rock",
+                        "Classical","Club","Club-House","Comedy","Contemporary Christian",
+                        "Country","Crossover","Cult","Dance","Dance Hall","Darkwave",
+                        "Death Metal","Disco","Dream","Drum &amp; Bass","Drum Solo","Duet",
+                        "Easy Listening","Electronic","Ethnic","Euro-House","Euro-Techno",
+                        "Eurodance","Fast Fusion","Folk","Folk-Rock","Folklore","Freestyle",
+                        "Funk","Fusion","Game","Gangsta","Gospel","Gothic","Gothic Rock",
+                        "Grunge","Hard Rock","Hardcore","Heavy Metal","Hip-Hop","House",
+                        "Humour","Indie","Industrial","Instrumental","Instrumental Pop",
+                        "Instrumental Rock","Jazz","Jazz+Funk","JPop","Jungle","Latin",
+                        "Lo-Fi","Meditative","Merengue","Metal","Musical","National Folk",
+                        "Native US","New Age","New Wave","Noise","Oldies","Opera","Other",
+                        "Polka","Polsk Punk","Pop","Pop-Folk","Pop/Funk","Porn Groove",
+                        "Power Ballad","Pranks","Primus","Progressive Rock","Psychedelic",
+                        "Psychedelic Rock","Punk","Punk Rock","R&amp;B","Rap","Rave","Reggae",
+                        "Retro","Revival","Rhythmic Soul","Rock","Rock &amp; Roll","Salsa",
+                        "Samba","Satire","Showtunes","Ska","Slow Jam","Slow Rock","Sonata",
+                        "Soul","Sound Clip","Soundtrack","Southern Rock","Space","Speech",
+                        "Swing","Symphonic Rock","Symphony","Synthpop","Tango","Techno",
+                        "Techno-Industrial","Terror","Thrash Metal","Top 40","Trailer",
+                        "Trance","Tribal","Trip-Hop","Vocal"
+                    ] %}
+                    {% for genre in genres|sort %}
+                    <option value="{{ genre }}" {% if (mixtape.category or '') == genre %}selected{% endif %}>{{ genre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="subtitle">Subtitle:</label>
+                <input type="text" id="subtitle" name="subtitle" value="{{ mixtape.subtitle or '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="summary">Summary:</label>
+                <textarea id="summary" name="summary">{{ mixtape.summary or '' }}</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="copyright">Copyright:</label>
+                <input type="text" id="copyright" name="copyright" value="{{ mixtape.copyright or '' }}">
+            </div>
+            
+            <div class="button-group">
+                <button type="submit">Update Mixtape</button>
+                <a href="{{ url_for('main.mixtape_style', mixtape_id=mixtape.mixtape_id) }}" style="padding: 10px 20px; background: #9c27b0; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">🎨 Customize Style</a>
+            </div>
+        </form>
+        
+        <div class="tracks-section">
+            <h3>Tracks</h3>
+            
+            <div class="dropzone" id="dropzone">
+                <p>📁 Drag and drop audio files here to add tracks</p>
+                <p><small>Supported formats: MP3, M4A, AAC</small></p>
+                <input type="file" id="fileInput" accept=".mp3,.m4a,.aac" multiple />
+            </div>
+            
+            <div id="throbber" class="throbber">
+                <div class="throbber-spinner"></div>
+                <div class="throbber-text">Processing file...</div>
+            </div>
+            
+            {% if tracks %}
+                <table class="tracks-table">
+                    <thead>
+                        <tr>
+                            <th style="width:40px;">#</th>
+                            <th>Title</th>
+                            <th>Artist</th>
+                            <th>Duration</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tracks-tbody">
+                        {% for track in tracks %}
+                        <tr data-track-id="{{ track.track_id }}">
+                            <td><span class="drag-handle">☰</span><span class="seq-num">{{ loop.index }}</span></td>
+                            <td><strong>{{ track.title }}</strong></td>
+                            <td>{{ track.author }}</td>
+                            <td>{{ (track.duration // 60)|int }}:{{ "%02d"|format(track.duration % 60) }}</td>
+                            <td>
+                                <button class="edit-btn" onclick="editTrack('{{ track.track_id }}')">Edit</button>
+                                <button class="delete-btn" onclick="deleteTrack('{{ track.track_id }}')">Delete</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p><em>No tracks added yet.</em></p>
+            {% endif %}
+        </div>
+        
+        <div class="links">
+            <a href="{{ url_for('main.admin') }}">Back to Dashboard</a>
+            <a href="{{ url_for('main.logout') }}" class="logout-btn">Logout</a>
+        </div>
+    </div>
+    
+    {% include 'footer.html' %}
+    
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+    <script>
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const throbber = document.getElementById('throbber');
+        
+        // Click to browse
+        dropzone.addEventListener('click', () => fileInput.click());
+        
+        // Drag and drop
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+        
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('dragover');
+        });
+        
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+        
+        function handleFile(file) {
+            console.log('File selected:', file.name, 'Mixtape ID:', '{{ mixtape.mixtape_id }}');
+            
+            // Validate file type
+            const validTypes = ['audio/mpeg', 'audio/mp4', 'audio/aac', 'audio/m4a'];
+            const validExtensions = /\.(mp3|m4a|aac)$/i;
+            
+            const isValidType = validTypes.includes(file.type) || validExtensions.test(file.name);
+            if (!isValidType) {
+                alert('Invalid file type. Please upload an MP3, M4A, or AAC file.');
+                return;
+            }
+            
+            // Show throbber
+            throbber.style.display = 'block';
+            
+            // Upload file
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('mixtape_id', '{{ mixtape.mixtape_id }}');
+            
+            console.log('Uploading to /api/upload-track with mixtape_id:', '{{ mixtape.mixtape_id }}');
+            
+            fetch('/api/upload-track', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                throbber.style.display = 'none';
+                console.log('Response data:', data);
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                } else {
+                    // Refresh page
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                throbber.style.display = 'none';
+                console.error('Upload error:', error);
+                alert('Error uploading file: ' + error.message + '\n\nCheck browser console for details.');
+            });
+        }
+        
+        function editTrack(trackId) {
+            alert('Track editing coming soon');
+        }
+        
+        function deleteTrack(trackId) {
+            if (confirm('Are you sure you want to delete this track?')) {
+                fetch('/api/delete-track', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({track_id: trackId})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                    } else {
+                        window.location.reload();
+                    }
+                });
+            }
+        }
+
+        // Drag-and-drop reordering
+        const tbody = document.getElementById('tracks-tbody');
+        if (tbody) {
+            Sortable.create(tbody, {
+                handle: '.drag-handle',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: function() {
+                    const rows = tbody.querySelectorAll('tr');
+                    const trackIds = Array.from(rows).map(r => r.dataset.trackId);
+                    // Update displayed sequence numbers
+                    rows.forEach((row, i) => {
+                        const seq = row.querySelector('.seq-num');
+                        if (seq) seq.textContent = i + 1;
+                    });
+                    // Save new order
+                    fetch('/api/reorder-tracks', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({mixtape_id: '{{ mixtape.mixtape_id }}', track_ids: trackIds})
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.error) alert('Error saving order: ' + data.error);
+                    })
+                    .catch(e => alert('Error saving order: ' + e.message));
+                }
+            });
+        }
+    </script>
+</body>
+</html>

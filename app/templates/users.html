@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users - {{ app_name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .page-container { max-width: 900px; margin: 0 auto; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 20px; margin-bottom: 20px; }
+        h1 { margin: 0; }
+        .links { margin-top: 30px; display: flex; gap: 10px; }
+        .links a { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; }
+        .links a:hover { background: #0056b3; }
+        .logout-btn { background: #dc3545 !important; }
+        .logout-btn:hover { background: #c82333 !important; }
+        .page-footer { border-top: 1px solid #ccc; padding-top: 20px; margin-top: 40px; text-align: center; color: #666; }
+
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        thead { background: #f0f0f0; }
+        th, td { padding: 10px 12px; text-align: left; border: 1px solid #ddd; font-size: 0.9em; }
+        tr:nth-child(even) { background: #fafafa; }
+        .badge-admin { display: inline-block; background: #28a745; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+        .user-pic { width: 32px; height: 32px; border-radius: 50%; vertical-align: middle; margin-right: 6px; }
+    </style>
+</head>
+<body>
+    {% include 'header.html' %}
+
+    <div class="page-container">
+        <h2>User Management</h2>
+        <p>{{ users|length }} registered user{{ 's' if users|length != 1 else '' }}.</p>
+
+        {% if users %}
+        <table>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Joined</th>
+                    <th>Last Login</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>
+                        {% if u.picture_url %}
+                        <img src="{{ u.picture_url }}" class="user-pic" alt="">
+                        {% endif %}
+                        {{ u.name or '—' }}
+                    </td>
+                    <td>{{ u.email }}</td>
+                    <td>
+                        {% if u.is_admin %}<span class="badge-admin">Admin</span>{% else %}User{% endif %}
+                    </td>
+                    <td>{{ u.created_at.strftime('%Y-%m-%d') if u.created_at else '—' }}</td>
+                    <td>{{ u.last_login.strftime('%Y-%m-%d') if u.last_login else '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p><em>No users found.</em></p>
+        {% endif %}
+
+        <div class="links">
+            <a href="{{ url_for('main.admin') }}">Back to Admin</a>
+            <a href="{{ url_for('main.index') }}">Back to Home</a>
+            <a href="{{ url_for('main.logout') }}" class="logout-btn">Logout</a>
+        </div>
+    </div>
+
+    {% include 'footer.html' %}
+</body>
+</html>

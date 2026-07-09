@@ -1,0 +1,5 @@
+#EXTM3U
+{% for track in tracks -%}
+#EXTINF:{{ track.duration or 0 }},{{ track.title or 'Unknown Track' }}
+/static/tracks/{{ track.track_id }}.mp3
+{% endfor -%}

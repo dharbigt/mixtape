@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" version="2.0">
+  <channel>
+    <title>{{ channel.title }}</title>
+    <description>{{ channel.description }}</description>
+    <language>{{ channel.language }}</language>        
+    <copyright>{{ channel.copyright }}</copyright>
+    {% if channel.lastBuildDate %}<lastBuildDate>{{ channel.lastBuildDate }}</lastBuildDate>{% endif %}
+    {% if channel.pubDate %}<pubDate>{{ channel.pubDate }}</pubDate>{% endif %}
+    <docs>http://blogs.law.harvard.edu/tech/rss</docs>
+    {% if channel.webMasterEmail %}<webMaster>{{ channel.webMasterEmail }}</webMaster>{% endif %}
+    {% if channel.author %}<itunes:author>{{ channel.author }}</itunes:author>{% endif %}
+    {% if channel.subtitle %}<itunes:subtitle>{{ channel.subtitle }}</itunes:subtitle>{% endif %}
+    {% if channel.summary %}<itunes:summary>{{ channel.summary }}</itunes:summary>{% endif %}
+    {% if channel_image_url %}<itunes:image href="{{ channel_image_url }}" />{% endif %}
+    {% if channel.author or channel.authorEmail %}
+    <itunes:owner>
+      {% if channel.author %}<itunes:name>{{ channel.author }}</itunes:name>{% endif %}
+      {% if channel.authorEmail %}<itunes:email>{{ channel.authorEmail }}</itunes:email>{% endif %}
+    </itunes:owner>
+    {% endif %}
+    {% if channel.explicit %}<itunes:explicit>{{ channel.explicit }}</itunes:explicit>{% endif %}
+    {% for item in items %}
+    <item>
+      <title>{{ item.title }}</title>
+      <guid>{{ item.podcast_item }}</guid>
+      <description>{{ item.description }}</description>
+      {% if item.file_url %}<enclosure url="{{ item.file_url }}" length="{{ item.file_size }}" type="audio/{{ item.file_ext }}"/>{% endif %}
+      {% if item.category %}<category>{{ item.category }}</category>{% endif %}
+      {% if item.pubDate_rfc2822 %}<pubDate>{{ item.pubDate_rfc2822 }}</pubDate>{% endif %}
+      {% if item.author %}<itunes:author>{{ item.author }}</itunes:author>{% endif %}
+      {% if item.subtitle %}<itunes:subtitle>{{ item.subtitle }}</itunes:subtitle>{% endif %}
+      {% if item.summary %}<itunes:summary>{{ item.summary }}</itunes:summary>{% endif %}
+      {% if item.duration %}<itunes:duration>{{ item.duration }}</itunes:duration>{% endif %}
+      {% if item.keywords %}<itunes:keywords>{{ item.keywords }}</itunes:keywords>{% endif %}
+    </item>
+    {% endfor %}
+  </channel>
+</rss>

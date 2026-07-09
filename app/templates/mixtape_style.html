@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customize Mixtape Style - {{ app_name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Covered+By+Your+Grace&family=Grape+Nuts&family=Permanent+Marker&family=Rock+Salt&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .page-container { max-width: 1200px; margin: 0 auto; }
+        .page-header { border-bottom: 1px solid #ccc; padding-bottom: 20px; margin-bottom: 20px; }
+        .page-header h1 { margin: 0; }
+        .page-header p { color: #666; margin: 5px 0 0 0; }
+        
+        .layout { display: flex; flex-direction: column; gap: 30px; }
+        
+        .preview-panel-top { background: white; padding: 20px; border-radius: 8px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; min-height: 200px; }
+        
+        .controls-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        
+        .settings-panel { background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #ddd; }
+        
+        .settings-section { margin-bottom: 25px; }
+        .settings-section h3 { margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #007bff; }
+        
+        .color-group { margin-bottom: 20px; }
+        .color-label { display: block; font-weight: bold; margin-bottom: 8px; }
+        .color-picker-wrapper { display: flex; gap: 10px; align-items: center; }
+        .color-picker-input { width: 60px; height: 40px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; }
+        .color-value { flex-grow: 1; font-family: monospace; font-size: 12px; padding: 5px; background: white; border: 1px solid #ddd; border-radius: 4px; }
+        
+        .slider-group { margin-bottom: 20px; }
+        .slider-label { display: block; font-weight: bold; margin-bottom: 8px; }
+        .slider-wrapper { display: flex; gap: 10px; align-items: center; }
+        .slider-wrapper input[type="range"] { flex-grow: 1; }
+        .slider-value { width: 50px; text-align: right; font-family: monospace; font-size: 12px; }
+        
+        .preview-svg { width: 100%; height: auto; max-width: 500px; background: white; }
+        
+        .button-group { margin-top: 20px; display: flex; gap: 10px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .btn-primary { background: #28a745; color: white; }
+        .btn-primary:hover { background: #218838; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; }
+        
+        .status-message { margin-top: 15px; padding: 10px; border-radius: 4px; display: none; }
+        .status-message.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-message.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        @media (max-width: 900px) {
+            .controls-layout { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'header.html' %}
+    
+    <div class="page-container">
+        <div class="page-header">
+            <h1>{{ mixtape.title }} - Customize Style</h1>
+            <p>Design your mixtape cassette appearance</p>
+        </div>
+        
+        <div class="layout">
+            <!-- Preview Panel at Top -->
+            <div class="preview-panel-top">
+                <div id="previewContainer" style="position: relative; display: inline-block;">
+                    <svg id="previewSVG" class="preview-svg" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 291.42 179.61">
+                        <!-- Styles will be injected here -->
+                        <defs>
+                            <style id="dynamicStyles"></style>
+                        </defs>
+                    </svg>
+                    
+                    <!-- HTML Text Overlay -->
+                    <div id="textOverlay" style="position: absolute; top: 0px; left: 0; width: 100%; height: 100%; pointer-events: none; max-width: 500px;">
+                        <div id="upperLabelOverlay" style="position: absolute; left: 4.3%; top: 6.6%; width: 91.4%; height: 21%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                            <div id="upperLabelText" style="text-align: center; white-space: pre-wrap; word-wrap: break-word; line-height: 1.3; color: #333; transform: translateY(5px);"></div>
+                        </div>
+                        <div id="lowerLabelOverlay" style="position: absolute; left: 4.3%; top: 60%; width: 91.4%; height: 10.6%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                            <div id="lowerLabelText" style="text-align: center; white-space: nowrap; color: #333;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Controls in Two Columns -->
+            <div class="controls-layout">
+                <!-- Left Column Settings Panel -->
+                <div class="settings-panel">
+                    <form id="styleForm">
+                        <!-- Shell Color Section -->
+                        <div class="settings-section">
+                            <h3>Shell</h3>
+                            
+                            <div class="color-group">
+                                <label class="color-label">Shell Color</label>
+                                <div class="color-picker-wrapper">
+                                    <input type="color" id="shellColor" class="color-picker-input" value="#ff9100">
+                                    <span class="color-value" id="shellColorValue">#ff9100</span>
+                                </div>
+                            </div>
+                            
+                            <div class="slider-group">
+                                <label class="slider-label">Shell Opacity</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="shellOpacity" min="0" max="1" step="0.05" value="0.3">
+                                    <span class="slider-value" id="shellOpacityValue">0.30</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reels and Clips Section -->
+                        <div class="settings-section">
+                            <h3>Reels</h3>
+                            
+                            <div class="color-group">
+                                <label class="color-label">Reel Color</label>
+                                <div class="color-picker-wrapper">
+                                    <input type="color" id="reelColor" class="color-picker-input" value="#00ff00">
+                                    <span class="color-value" id="reelColorValue">#00ff00</span>
+                                </div>
+                            </div>
+                            
+                            <div class="slider-group">
+                                <label class="slider-label">Reel Opacity</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="reelOpacity" min="0" max="1" step="0.05" value="1">
+                                    <span class="slider-value" id="reelOpacityValue">1.00</span>
+                                </div>
+                            </div>
+                            
+                            <div class="color-group">
+                                <label class="color-label">Leader Clip Color</label>
+                                <div class="color-picker-wrapper">
+                                    <input type="color" id="clipColor" class="color-picker-input" value="#00ff00">
+                                    <span class="color-value" id="clipColorValue">#00ff00</span>
+                                </div>
+                            </div>
+                            
+                            <div class="slider-group">
+                                <label class="slider-label">Leader Clip Opacity</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="clipOpacity" min="0" max="1" step="0.05" value="1">
+                                    <span class="slider-value" id="clipOpacityValue">1.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        
+                        <!-- Meter Bars Color Section -->
+                        <div class="settings-section">
+                            <h3>Meter Bars</h3>
+                            
+                            <div class="color-group">
+                                <label class="color-label">Meter Bar Color</label>
+                                <div class="color-picker-wrapper">
+                                    <input type="color" id="meterColor" class="color-picker-input" value="#ff9100">
+                                    <span class="color-value" id="meterColorValue">#ff9100</span>
+                                </div>
+                            </div>
+                            
+                            <div class="slider-group">
+                                <label class="slider-label">Meter Bar Opacity</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="meterOpacity" min="0" max="1" step="0.05" value="0.3">
+                                    <span class="slider-value" id="meterOpacityValue">0.30</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Hardware Color Section -->
+                        <div class="settings-section">
+                            <h3>Hardware</h3>
+                            
+                            <div class="color-group">
+                                <label class="color-label">Screw Color</label>
+                                <div class="color-picker-wrapper">
+                                    <input type="color" id="screwColor" class="color-picker-input" value="#8e8e8e">
+                                    <span class="color-value" id="screwColorValue">#8e8e8e</span>
+                                </div>
+                            </div>
+                            
+                            <div class="slider-group">
+                                <label for="screwStarOpacity" class="slider-label">Screw Star Opacity</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="screwStarOpacity" min="0" max="1" step="0.05" value="0.3" class="slider-input">
+                                    <span class="slider-value" id="screwStarOpacityValue">30%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Guide Spindles Color Section -->
+                        <div class="settings-section">
+                            <h3>Guide Spindles</h3>
+                            
+                            <div class="color-group">
+                                <label class="color-label">Guide Color</label>
+                                <div class="color-picker-wrapper">
+                                    <input type="color" id="guideColor" class="color-picker-input" value="#8e8e8e">
+                                    <span class="color-value" id="guideColorValue">#8e8e8e</span>
+                                </div>
+                            </div>
+                            
+                            <div class="slider-group">
+                                <label class="slider-label">Guide Opacity</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="guideOpacity" min="0" max="1" step="0.05" value="1.0">
+                                    <span class="slider-value" id="guideOpacityValue">1.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Right Column Settings Panel -->
+                <div class="settings-panel">
+                    <div>
+                        <!-- Label Color Section -->
+                        <div class="settings-section">
+                            <h3>Label</h3>
+                            
+                            <div class="color-group">
+                                <label class="color-label">Label Color</label>
+                                <div class="color-picker-wrapper">
+                                    <input type="color" id="labelColor" class="color-picker-input" value="#ff9100">
+                                    <span class="color-value" id="labelColorValue">#ff9100</span>
+                                </div>
+                            </div>
+                            
+                            <div class="slider-group">
+                                <label class="slider-label">Label Opacity</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="labelOpacity" min="0" max="1" step="0.05" value="0.11">
+                                    <span class="slider-value" id="labelOpacityValue">0.11</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Label Display Mode Section -->
+                        <div class="settings-section">
+                            <h3>Label Display Mode</h3>
+                            
+                            <div class="color-group">
+                                <label class="color-label">Display Mode</label>
+                                <select id="labelDisplayMode" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                    <option value="No Label">No Label</option>
+                                    <option value="Full Label">Full Label</option>
+                                    <option value="Top and Bottom Labels" selected>Top and Bottom Labels</option>
+                                    <option value="Top Label Only">Top Label Only</option>
+                                    <option value="Bottom Label Only">Bottom Label Only</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Label Text Section -->
+                        <div class="settings-section">
+                            <h3>Label Text</h3>
+                            
+                            <div class="color-group">
+                                <label class="color-label">Label Font</label>
+                                <select id="labelFont" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                    <option value="Arial">Arial</option>
+                                    <option value="Helvetica">Helvetica</option>
+                                    <option value="Georgia">Georgia</option>
+                                    <option value="'Times New Roman'">Times New Roman</option>
+                                    <option value="'Courier New'">Courier New</option>
+                                    <option value="Impact">Impact</option>
+                                    <option value="Verdana">Verdana</option>
+                                    <option value="Comic Sans MS">Comic Sans MS</option>
+                                    <option value="'Covered By Your Grace'">Covered By Your Grace</option>
+                                    <option value="'Grape Nuts'">Grape Nuts</option>
+                                    <option value="'Permanent Marker'">Permanent Marker</option>
+                                    <option value="'Rock Salt'">Rock Salt</option>
+                                </select>
+                            </div>
+                            
+                            <div class="color-group">
+                                <label class="color-label">Upper Label (up to 2 lines)</label>
+                                <textarea id="labelUpperText" style="width: 100%; height: 60px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; resize: none;" placeholder="Enter text for upper label (max 100 chars)"></textarea>
+                            </div>
+                            
+                            <div class="slider-group">
+                                <label class="slider-label">Upper Label Font Size</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="upperLabelFontSize" min="8" max="42" step="1" value="12">
+                                    <span class="slider-value" id="upperLabelFontSizeValue">12</span>
+                                </div>
+                            </div>
+                            
+                            <div class="slider-group">
+                                <label class="slider-label">Upper Text Opacity</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="upperLabelOpacity" min="0" max="1" step="0.05" value="1">
+                                    <span class="slider-value" id="upperLabelOpacityValue">1.00</span>
+                                </div>
+                            </div>
+                            
+                            <div class="color-group">
+                                <label class="color-label">Lower Label (1 line)</label>
+                                <input type="text" id="labelLowerText" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace;" placeholder="Enter text for lower label (max 50 chars)" maxlength="50">
+                            </div>
+                            
+                            <div class="slider-group">
+                                <label class="slider-label">Lower Label Font Size</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="lowerLabelFontSize" min="8" max="42" step="1" value="10">
+                                    <span class="slider-value" id="lowerLabelFontSizeValue">10</span>
+                                </div>
+                            </div>
+                            
+                            <div class="slider-group">
+                                <label class="slider-label">Lower Text Opacity</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="lowerLabelOpacity" min="0" max="1" step="0.05" value="1">
+                                    <span class="slider-value" id="lowerLabelOpacityValue">1.00</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Overlay Section -->
+                        <div class="settings-section">
+                            <h3>Tape Overlay</h3>
+                            
+                            <div class="color-group">
+                                <label class="color-label">Overlay Image</label>
+                                <select id="overlaySelect" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                    <option value="">None</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="button-group">
+                <button type="submit" form="styleForm" class="btn btn-primary">Save Style</button>
+                <a href="{{ url_for('main.mixtape_admin', mixtape_id=mixtape.mixtape_id) }}" class="btn btn-secondary">Back</a>
+            </div>
+            
+            <div class="status-message" id="statusMessage"></div>
+        </div>
+    </div>
+    
+    {% include 'footer.html' %}
+    
+    <script>
+        const form = document.getElementById('styleForm');
+        const statusMessage = document.getElementById('statusMessage');
+        const dynamicStyles = document.getElementById('dynamicStyles');
+        const previewSVG = document.getElementById('previewSVG');
+        
+        // Load cassette-new.svg into preview
+        function loadCassettePreview() {
+            fetch('/static/cassette-new.svg')
+                .then(response => response.text())
+                .then(svgText => {
+                    // Parse the SVG and inject into preview container
+                    const parser = new DOMParser();
+                    const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+                    const svgElement = svgDoc.documentElement;
+                    
+                    // Remove old content and replace with new SVG
+                    previewSVG.innerHTML = svgElement.innerHTML;
+                    previewSVG.setAttribute('viewBox', svgElement.getAttribute('viewBox'));
+                    previewSVG.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                    previewSVG.setAttribute('version', '1.1');
+                    
+                    // Replace or create defs with clean style element
+                    let defsElement = previewSVG.querySelector('defs');
+                    if (defsElement) {
+                        // Remove all existing style elements from defs
+                        const existingStyles = defsElement.querySelectorAll('style');
+                        existingStyles.forEach(s => s.remove());
+                    } else {
+                        defsElement = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                        previewSVG.insertBefore(defsElement, previewSVG.firstChild);
+                    }
+                    
+                    // Create fresh style element for dynamic styles
+                    const styleElement = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+                    styleElement.id = 'dynamicStyles';
+                    defsElement.appendChild(styleElement);
+                    
+                    // Move Full_Label to end so it renders on top (after other labels)
+                    const fullLabel = previewSVG.querySelector('#Full_Label');
+                    if (fullLabel) {
+                        previewSVG.appendChild(fullLabel);
+                    }
+                    
+                    updatePreview();
+                })
+                .catch(error => console.error('Error loading cassette preview:', error));
+        }
+        
+        // Shell inputs
+        const shellColor = document.getElementById('shellColor');
+        const shellColorValue = document.getElementById('shellColorValue');
+        const shellOpacity = document.getElementById('shellOpacity');
+        const shellOpacityValue = document.getElementById('shellOpacityValue');
+        
+        // Reel inputs
+        const reelColor = document.getElementById('reelColor');
+        const reelColorValue = document.getElementById('reelColorValue');
+        const reelOpacity = document.getElementById('reelOpacity');
+        const reelOpacityValue = document.getElementById('reelOpacityValue');
+        
+        // Clip inputs
+        const clipColor = document.getElementById('clipColor');
+        const clipColorValue = document.getElementById('clipColorValue');
+        const clipOpacity = document.getElementById('clipOpacity');
+        const clipOpacityValue = document.getElementById('clipOpacityValue');
+        
+        // Label inputs
+        const labelColor = document.getElementById('labelColor');
+        const labelColorValue = document.getElementById('labelColorValue');
+        const labelOpacity = document.getElementById('labelOpacity');
+        const labelOpacityValue = document.getElementById('labelOpacityValue');
+        
+        // Meter inputs
+        const meterColor = document.getElementById('meterColor');
+        const meterColorValue = document.getElementById('meterColorValue');
+        const meterOpacity = document.getElementById('meterOpacity');
+        const meterOpacityValue = document.getElementById('meterOpacityValue');
+        
+        // Screw inputs
+        const screwColor = document.getElementById('screwColor');
+        const screwColorValue = document.getElementById('screwColorValue');
+        const screwStarOpacity = document.getElementById('screwStarOpacity');
+        const screwStarOpacityValue = document.getElementById('screwStarOpacityValue');
+        
+        // Guide inputs
+        const guideColor = document.getElementById('guideColor');
+        const guideColorValue = document.getElementById('guideColorValue');
+        const guideOpacity = document.getElementById('guideOpacity');
+        const guideOpacityValue = document.getElementById('guideOpacityValue');
+        
+        // Label display mode input
+        const labelDisplayMode = document.getElementById('labelDisplayMode');
+        
+        // Label text inputs
+        const labelFont = document.getElementById('labelFont');
+        const labelUpperText = document.getElementById('labelUpperText');
+        const labelLowerText = document.getElementById('labelLowerText');
+        const upperLabelFontSize = document.getElementById('upperLabelFontSize');
+        const upperLabelFontSizeValue = document.getElementById('upperLabelFontSizeValue');
+        const upperLabelOpacity = document.getElementById('upperLabelOpacity');
+        const upperLabelOpacityValue = document.getElementById('upperLabelOpacityValue');
+        const lowerLabelFontSize = document.getElementById('lowerLabelFontSize');
+        const lowerLabelFontSizeValue = document.getElementById('lowerLabelFontSizeValue');
+        const lowerLabelOpacity = document.getElementById('lowerLabelOpacity');
+        const lowerLabelOpacityValue = document.getElementById('lowerLabelOpacityValue');
+        const overlaySelect = document.getElementById('overlaySelect');
+        
+        // Shell events
+        shellColor.addEventListener('input', (e) => {
+            shellColorValue.textContent = e.target.value;
+            updatePreview();
+        });
+        
+        shellOpacity.addEventListener('input', (e) => {
+            shellOpacityValue.textContent = parseFloat(e.target.value).toFixed(2);
+            updatePreview();
+        });
+        
+        // Reel events
+        reelColor.addEventListener('input', (e) => {
+            reelColorValue.textContent = e.target.value;
+            updatePreview();
+        });
+        
+        reelOpacity.addEventListener('input', (e) => {
+            reelOpacityValue.textContent = parseFloat(e.target.value).toFixed(2);
+            updatePreview();
+        });
+        
+        // Clip events
+        clipColor.addEventListener('input', (e) => {
+            clipColorValue.textContent = e.target.value;
+            updatePreview();
+        });
+        
+        clipOpacity.addEventListener('input', (e) => {
+            clipOpacityValue.textContent = parseFloat(e.target.value).toFixed(2);
+            updatePreview();
+        });
+        
+        // Label events
+        labelColor.addEventListener('input', (e) => {
+            labelColorValue.textContent = e.target.value;
+            updatePreview();
+        });
+        
+        labelOpacity.addEventListener('input', (e) => {
+            labelOpacityValue.textContent = parseFloat(e.target.value).toFixed(2);
+            updatePreview();
+        });
+        
+        // Meter events
+        meterColor.addEventListener('input', (e) => {
+            meterColorValue.textContent = e.target.value;
+            updatePreview();
+        });
+        
+        meterOpacity.addEventListener('input', (e) => {
+            meterOpacityValue.textContent = parseFloat(e.target.value).toFixed(2);
+            updatePreview();
+        });
+        
+        // Screw events
+        screwColor.addEventListener('input', (e) => {
+            screwColorValue.textContent = e.target.value;
+            updatePreview();
+        });
+        
+        screwStarOpacity.addEventListener('input', (e) => {
+            screwStarOpacityValue.textContent = Math.round(parseFloat(e.target.value) * 100) + '%';
+            updatePreview();
+        });
+        
+        // Guide events
+        guideColor.addEventListener('input', (e) => {
+            guideColorValue.textContent = e.target.value;
+            updatePreview();
+        });
+        
+        guideOpacity.addEventListener('input', (e) => {
+            guideOpacityValue.textContent = parseFloat(e.target.value).toFixed(2);
+            updatePreview();
+        });
+        
+        // Label display mode events
+        labelDisplayMode.addEventListener('change', updatePreview);
+        
+        // Label text events
+        labelFont.addEventListener('change', updatePreview);
+        labelUpperText.addEventListener('input', updatePreview);
+        labelLowerText.addEventListener('input', updatePreview);
+        upperLabelFontSize.addEventListener('input', (e) => {
+            upperLabelFontSizeValue.textContent = e.target.value;
+            updatePreview();
+        });
+        upperLabelOpacity.addEventListener('input', (e) => {
+            upperLabelOpacityValue.textContent = parseFloat(e.target.value).toFixed(2);
+            updatePreview();
+        });
+        lowerLabelFontSize.addEventListener('input', (e) => {
+            lowerLabelFontSizeValue.textContent = e.target.value;
+            updatePreview();
+        });
+        lowerLabelOpacity.addEventListener('input', (e) => {
+            lowerLabelOpacityValue.textContent = parseFloat(e.target.value).toFixed(2);
+            updatePreview();
+        });
+        overlaySelect.addEventListener('change', updatePreview);
+        
+        // Load saved styles if they exist
+        function loadSavedStyles() {
+            const mixtapeId = '{{ mixtape.mixtape_id }}';
+            fetch(`/api/get-mixtape-style/${mixtapeId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.style) {
+                        shellColor.value = data.style.shell_color || '#fc4c4c';
+                        shellColorValue.textContent = shellColor.value;
+                        
+                        shellOpacity.value = data.style.shell_opacity !== null ? data.style.shell_opacity : 0.64;
+                        shellOpacityValue.textContent = parseFloat(shellOpacity.value).toFixed(2);
+                        
+                        reelColor.value = data.style.reel_color || '#00ff00';
+                        reelColorValue.textContent = reelColor.value;
+                        
+                        reelOpacity.value = data.style.reel_opacity !== null ? data.style.reel_opacity : 1;
+                        reelOpacityValue.textContent = parseFloat(reelOpacity.value).toFixed(2);
+                        
+                        clipColor.value = data.style.clip_color || '#00ff00';
+                        clipColorValue.textContent = clipColor.value;
+                        
+                        clipOpacity.value = data.style.clip_opacity !== null ? data.style.clip_opacity : 1;
+                        clipOpacityValue.textContent = parseFloat(clipOpacity.value).toFixed(2);
+                        
+                        labelColor.value = data.style.label_color || '#ffffff';
+                        labelColorValue.textContent = labelColor.value;
+                        
+                        labelOpacity.value = data.style.label_opacity !== null ? data.style.label_opacity : 1;
+                        labelOpacityValue.textContent = parseFloat(labelOpacity.value).toFixed(2);
+                        
+                        meterColor.value = data.style.meter_color || '#ff0000';
+                        meterColorValue.textContent = meterColor.value;
+                        
+                        meterOpacity.value = data.style.meter_opacity !== null ? data.style.meter_opacity : 0.3;
+                        meterOpacityValue.textContent = parseFloat(meterOpacity.value).toFixed(2);
+                        
+                        screwColor.value = data.style.screw_color || '#8e8e8e';
+                        screwColorValue.textContent = screwColor.value;
+                        screwStarOpacity.value = data.style.screw_star_opacity || 0.3;
+                        screwStarOpacityValue.textContent = Math.round(screwStarOpacity.value * 100) + '%';
+                        
+                        guideColor.value = data.style.guide_color || '#8e8e8e';
+                        guideColorValue.textContent = guideColor.value;
+                        guideOpacity.value = data.style.guide_opacity !== null ? data.style.guide_opacity : 1.0;
+                        guideOpacityValue.textContent = parseFloat(guideOpacity.value).toFixed(2);
+                        
+                        labelDisplayMode.value = data.style.label_display_mode || 'Top and Bottom Labels';
+                        
+                        labelFont.value = data.style.label_font_family || 'Arial';
+                        labelUpperText.value = data.style.label_upper_text || '';
+                        upperLabelFontSize.value = data.style.label_upper_font_size || 12;
+                        upperLabelFontSizeValue.textContent = upperLabelFontSize.value;
+                        upperLabelOpacity.value = data.style.label_upper_opacity !== null ? data.style.label_upper_opacity : 1.0;
+                        upperLabelOpacityValue.textContent = parseFloat(upperLabelOpacity.value).toFixed(2);
+                        labelLowerText.value = data.style.label_lower_text || '';
+                        lowerLabelFontSize.value = data.style.label_lower_font_size || 10;
+                        lowerLabelFontSizeValue.textContent = lowerLabelFontSize.value;
+                        lowerLabelOpacity.value = data.style.label_lower_opacity !== null ? data.style.label_lower_opacity : 1.0;
+                        lowerLabelOpacityValue.textContent = parseFloat(lowerLabelOpacity.value).toFixed(2);
+                        overlaySelect.value = data.style.overlay_filename || '';
+                        
+                        updatePreview();
+                    }
+                })
+                .catch(error => console.error('Error loading styles:', error));
+        }
+        
+        // Load available overlay files
+        function loadOverlayFiles() {
+            return fetch('/api/get-overlay-files')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.overlays) {
+                        data.overlays.forEach(filename => {
+                            const option = document.createElement('option');
+                            option.value = filename;
+                            option.textContent = filename;
+                            overlaySelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading overlay files:', error);
+                    return Promise.resolve();
+                });
+        }
+        
+        function updatePreview() {
+            const css = `
+                /* Shell - .st2 class elements */
+                .st2 {
+                    fill: ${shellColor.value} !important;
+                    opacity: ${shellOpacity.value} !important;
+                }
+                /* Reel - .st5 class elements */
+                .st5 {
+                    fill: ${reelColor.value} !important;
+                    opacity: ${reelOpacity.value} !important;
+                }
+                /* Leader clips - .st9 class elements */
+                .st9 {
+                    fill: ${clipColor.value} !important;
+                    opacity: ${clipOpacity.value} !important;
+                }
+                /* Labels with conditional display based on mode */
+                #Full_Label {
+                    fill: ${labelColor.value} !important;
+                    opacity: ${labelOpacity.value} !important;
+                    ${labelDisplayMode.value === 'No Label' || labelDisplayMode.value === 'Top and Bottom Labels' || labelDisplayMode.value === 'Top Label Only' || labelDisplayMode.value === 'Bottom Label Only' ? 'display: none !important;' : 'display: block !important;'}
+                }
+                #Upper_Label {
+                    fill: ${labelColor.value} !important;
+                    opacity: ${labelOpacity.value} !important;
+                    ${['No Label', 'Bottom Label Only', 'Full Label'].includes(labelDisplayMode.value) ? 'display: none !important;' : 'display: block !important;'}
+                }
+                #Lower_Label {
+                    fill: ${labelColor.value} !important;
+                    opacity: ${labelOpacity.value} !important;
+                    ${['No Label', 'Top Label Only', 'Full Label'].includes(labelDisplayMode.value) ? 'display: none !important;' : 'display: block !important;'}
+                }
+                /* Meter bars */
+                #Meter .st0 {
+                    opacity: ${meterOpacity.value} !important;
+                }
+                #Meter rect {
+                    fill: ${meterColor.value} !important;
+                    opacity: ${meterOpacity.value} !important;
+                }
+                /* Screws */
+                #Screw_SE, #Screw_SW, #Screw_NW, #Screw_NE, #Screw_Middle {
+                    fill: ${screwColor.value} !important;
+                }
+                .st1 {
+                    opacity: ${screwStarOpacity.value} !important;
+                }
+                /* Guide spindles */
+                .st7 {
+                    fill: ${guideColor.value} !important;
+                    opacity: ${guideOpacity.value} !important;
+                }
+                /* Static elements */
+                .st8 { fill: none !important; stroke: #2b1700 !important; }
+            `;
+            
+            // Find or create the style element within the SVG
+            let styleElement = document.getElementById('dynamicStyles');
+            if (!styleElement) {
+                const defs = previewSVG.querySelector('defs');
+                styleElement = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+                styleElement.id = 'dynamicStyles';
+                defs.appendChild(styleElement);
+            }
+            styleElement.textContent = css;
+            
+            // Update HTML text overlays
+            document.getElementById('upperLabelText').textContent = labelUpperText.value;
+            document.getElementById('upperLabelText').style.fontFamily = labelFont.value;
+            document.getElementById('upperLabelText').style.fontSize = upperLabelFontSize.value + 'px';
+            document.getElementById('upperLabelText').style.opacity = upperLabelOpacity.value;
+            
+            document.getElementById('lowerLabelText').textContent = labelLowerText.value;
+            document.getElementById('lowerLabelText').style.fontFamily = labelFont.value;
+            document.getElementById('lowerLabelText').style.fontSize = lowerLabelFontSize.value + 'px';
+            document.getElementById('lowerLabelText').style.opacity = lowerLabelOpacity.value;
+            
+            // Handle overlay image in preview
+            const overlayFilename = overlaySelect.value;
+            let overlayElement = previewSVG.querySelector('image[id="tapeOverlay"]');
+            
+            if (overlayFilename) {
+                const overlayPath = '/static/overlays/' + overlayFilename;
+                if (!overlayElement) {
+                    overlayElement = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+                    overlayElement.id = 'tapeOverlay';
+                    overlayElement.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', overlayPath);
+                    overlayElement.setAttribute('x', '0');
+                    overlayElement.setAttribute('y', '0');
+                    overlayElement.setAttribute('width', '291.42');
+                    overlayElement.setAttribute('height', '179.61');
+                    // Insert before Paper_Labels group so overlay is behind labels
+                    const paperLabels = previewSVG.querySelector('#Paper_Labels');
+                    if (paperLabels) {
+                        previewSVG.insertBefore(overlayElement, paperLabels);
+                    } else {
+                        previewSVG.appendChild(overlayElement);
+                    }
+                } else {
+                    overlayElement.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', overlayPath);
+                }
+            } else if (overlayElement) {
+                overlayElement.remove();
+            }
+        }
+        
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const styleData = {
+                shell_color: shellColor.value,
+                shell_opacity: parseFloat(shellOpacity.value),
+                reel_color: reelColor.value,
+                reel_opacity: parseFloat(reelOpacity.value),
+                clip_color: clipColor.value,
+                clip_opacity: parseFloat(clipOpacity.value),
+                label_color: labelColor.value,
+                label_opacity: parseFloat(labelOpacity.value),
+                label_display_mode: labelDisplayMode.value,
+                meter_color: meterColor.value,
+                meter_opacity: parseFloat(meterOpacity.value),
+                screw_color: screwColor.value,
+                screw_star_opacity: parseFloat(screwStarOpacity.value),
+                guide_color: guideColor.value,
+                guide_opacity: parseFloat(guideOpacity.value),
+                label_font_family: labelFont.value,
+                label_upper_text: labelUpperText.value,
+                label_upper_font_size: parseInt(upperLabelFontSize.value),
+                label_upper_opacity: parseFloat(upperLabelOpacity.value),
+                label_lower_text: labelLowerText.value,
+                label_lower_font_size: parseInt(lowerLabelFontSize.value),
+                label_lower_opacity: parseFloat(lowerLabelOpacity.value),
+                overlay_filename: overlaySelect.value || null
+            };
+            
+            console.log('Saving style data:', styleData);
+            
+            fetch('/api/save-mixtape-style/{{ mixtape.mixtape_id }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(styleData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusMessage.textContent = '✓ Style saved successfully!';
+                    statusMessage.className = 'status-message success';
+                    statusMessage.style.display = 'block';
+                    setTimeout(() => {
+                        statusMessage.style.display = 'none';
+                    }, 3000);
+                } else {
+                    throw new Error(data.error || 'Failed to save style');
+                }
+            })
+            .catch(error => {
+                statusMessage.textContent = '✗ Error saving style: ' + error.message;
+                statusMessage.className = 'status-message error';
+                statusMessage.style.display = 'block';
+            });
+        });
+        
+        // Load saved styles on page load
+        loadCassettePreview();
+        loadOverlayFiles().then(() => {
+            loadSavedStyles();
+        });
+    </script>
+</body>
+</html>

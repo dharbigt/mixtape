@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ app_name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Covered+By+Your+Grace&family=Grape+Nuts&family=Permanent+Marker&family=Rock+Salt&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 40px 20px; }
+        .page-container { max-width: 1200px; margin: 0 auto; }
+        
+        .header { text-align: center; margin-bottom: 60px; color: white; }
+        .header h1 { font-size: 3.5em; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .header p { font-size: 1.2em; opacity: 0.95; }
+        
+        .mixtapes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 30px; }
+        
+        .mixtape-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .mixtape-card:hover { transform: translateY(-8px); box-shadow: 0 15px 40px rgba(0,0,0,0.4); }
+        
+        .cassette-artwork { height: 200px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; overflow: hidden; padding-top: 10px; position: relative; }
+        .cassette-wrapper { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+        .cassette-svg { width: 100%; height: 100%; max-width: 500px; display: block; }
+        .cassette-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
+        .label-text-overlay { position: absolute; font-family: Arial, sans-serif; color: #333; display: flex; align-items: center; justify-content: center; overflow: hidden; text-overflow: ellipsis; }
+        .upper-label-overlay { left: 4.3%; top: 6.6%; width: 91.4%; height: 21%; white-space: pre-wrap; word-wrap: break-word; font-size: 10px; line-height: 1.2; text-align: center; }
+        .lower-label-overlay { left: 4.3%; top: 60%; width: 91.4%; height: 10.6%; white-space: nowrap; font-size: 10px; text-align: center; }
+        
+        .mixtape-content { padding: 25px; }
+        .mixtape-title { font-size: 1.5em; color: #333; margin-bottom: 8px; font-weight: 600; }
+        .mixtape-subtitle { font-size: 0.95em; color: #666; margin-bottom: 10px; }
+        .mixtape-author { font-size: 0.85em; color: #999; margin-bottom: 15px; font-style: italic; }
+        
+        .mixtape-description { font-size: 10pt; color: #555; line-height: 1.5; margin-bottom: 15px; max-height: 80px; overflow: hidden; white-space: pre-wrap; }
+        
+        .mixtape-actions { display: flex; gap: 10px; margin-bottom: 15px; }
+        .btn { display: inline-flex; align-items: center; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-size: 0.9em; border: none; cursor: pointer; transition: all 0.2s ease; }
+        .btn-m3u { background: #ff9100; color: white; flex-grow: 1; justify-content: center; font-weight: 600; }
+        .btn-m3u:hover { background: #e88000; }
+        .btn-zip { background: #764ba2; color: white; flex-grow: 1; justify-content: center; font-weight: 600; }
+        .btn-zip:hover { background: #6a3f8f; }
+        .btn-play { background: #667eea; color: white; flex-grow: 1; justify-content: center; font-weight: 600; }
+        .btn-play:hover { background: #5568d3; }
+        .btn-play.playing { background: #764ba2; }
+        .btn-play.playing:hover { background: #6a3f8f; }
+        
+        .now-playing { display: none; padding: 15px; background: #f8f8f8; border-radius: 6px; margin-bottom: 15px; }
+        .now-playing.active { display: block; }
+        .now-playing-title { font-weight: 600; color: #333; margin-bottom: 10px; font-size: 0.95em; }
+        .now-playing-controls { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .player-btn { background: #667eea; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 600; transition: background 0.2s; }
+        .player-btn:hover { background: #5568d3; }
+        .player-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .player-track-info { flex: 1; text-align: center; font-size: 0.85em; color: #666; }
+        .now-playing-progress { width: 100%; height: 4px; background: #ddd; border-radius: 2px; margin-bottom: 8px; cursor: pointer; }
+        .now-playing-progress-bar { height: 100%; background: #667eea; border-radius: 2px; width: 0%; }
+        .now-playing-time { font-size: 0.8em; color: #999; text-align: right; }
+        
+        .volume-control {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #ddd;
+            border-radius: 2px;
+            outline: none;
+        }
+        
+        .volume-control::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            transition: background 0.2s;
+        }
+        
+        .volume-control::-webkit-slider-thumb:hover {
+            background: #5568d3;
+        }
+        
+        .volume-control::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            transition: background 0.2s;
+        }
+        
+        .volume-control::-moz-range-thumb:hover {
+            background: #5568d3;
+        }
+        
+        .volume-control::-moz-range-track {
+            background: transparent;
+            border: none;
+        }
+        
+        .sticky-player {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #ddd;
+            padding: 15px 20px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: none;
+            max-width: 100%;
+        }
+        
+        .sticky-player.active {
+            display: block;
+        }
+        
+        .sticky-player-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .sticky-player-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+        
+        .sticky-player-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .sticky-skip-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        
+        .sticky-skip-btn:hover {
+            background: #5568d3;
+        }
+        
+        .sticky-player-progress {
+            width: 100%;
+            height: 4px;
+            background: #ddd;
+            border-radius: 2px;
+            margin-bottom: 6px;
+            cursor: pointer;
+        }
+        
+        .sticky-player-progress-bar {
+            height: 100%;
+            background: #667eea;
+            border-radius: 2px;
+            width: 0%;
+        }
+        
+        .sticky-player-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .sticky-volume-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        body.player-open {
+            padding-bottom: 120px;
+        }
+        
+        
+        .track-item.now-playing-track { background: #f0f7ff; padding: 6px; border-left: 3px solid #667eea; margin-left: -6px; padding-left: 3px; }
+        .track-item.now-playing-track .track-number { color: #667eea; font-weight: 700; }
+        .btn-view { background: #f0f0f0; color: #333; }
+        .btn-view:hover { background: #e0e0e0; }
+        
+        .playlist-details { border-top: 1px solid #eee; }
+        .playlist-details summary { cursor: pointer; font-weight: 600; color: #333; padding: 12px 0; user-select: none; }
+        .playlist-details summary:hover { color: #ff9100; }
+        .playlist-details[open] summary { color: #ff9100; margin-bottom: 12px; }
+        .playlist-tracks { font-size: 0.85em; color: #666; line-height: 1.8; }
+        .track-item { margin-bottom: 8px; display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; }
+        .track-number { color: #999; font-weight: 600; }
+        .track-title { color: #333; font-weight: 500; }
+        .track-artist { color: #999; }
+        .track-duration { color: #999; font-size: 0.9em; }
+        .track-download { color: #ff9100; text-decoration: none; font-size: 0.85em; margin-left: auto; flex-shrink: 0; }
+        .track-download:hover { color: #e68900; }
+        
+        .landing-hero { background: rgba(255,255,255,0.15); border-radius: 16px; padding: 60px 40px; text-align: center; color: white; backdrop-filter: blur(4px); }
+        .landing-hero p { font-size: 1.2em; opacity: 0.9; margin-bottom: 30px; }
+        .btn-login { display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px; background: white; color: #764ba2; border-radius: 8px; text-decoration: none; font-size: 1.1em; font-weight: 700; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+        
+        .empty-state { text-align: center; padding: 60px 40px; color: white; }
+        .empty-state p { font-size: 1.2em; }
+        
+        .page-footer { text-align: center; margin-top: 80px; padding: 40px 20px; }
+        .footer-link { color: rgba(255, 255, 255, 0.4); text-decoration: none; font-size: 1.2em; transition: color 0.3s ease; }
+        .footer-link:hover { color: rgba(255, 255, 255, 0.7); }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="header">
+            <h1>{{ app_name }} 🎚️</h1>
+        </div>
+        
+        {% if mixtapes is none %}
+        <div class="landing-hero">
+            <p>A place for mixtapes. Sign in to listen.</p>
+            <a href="{{ url_for('main.login_google') }}" class="btn-login">Sign in with Google</a>
+        </div>
+        {% elif mixtapes %}
+        <div class="mixtapes-grid">
+            {% for mixtape in mixtapes %}
+            <div class="mixtape-card" data-mixtape-id="{{ mixtape.mixtape_id }}">
+                <div class="cassette-artwork">
+                    <object data="{{ url_for('main.mixtape_cassette_svg', mixtape_id=mixtape.mixtape_id) }}" type="image/svg+xml" style="width: 100%; height: 100%; display: block;"></object>
+                    <div class="cassette-overlay">
+                        <div class="label-text-overlay upper-label-overlay" style="padding-top: 15px; font-family: {{ mixtape.label_font_family or 'Arial' }}; font-size: {{ mixtape.label_upper_font_size or 12 }}px; {% if mixtape.label_upper_opacity is not none %}opacity: {{ mixtape.label_upper_opacity }} !important;{% endif %}">{{ mixtape.label_upper_text }}</div>
+                        <div class="label-text-overlay lower-label-overlay" style="padding-top: 10px; font-family: {{ mixtape.label_font_family or 'Arial' }}; font-size: {{ mixtape.label_lower_font_size or 10 }}px; {% if mixtape.label_lower_opacity is not none %}opacity: {{ mixtape.label_lower_opacity }} !important;{% endif %}">{{ mixtape.label_lower_text }}</div>
+                    </div>
+                </div>
+                <div class="mixtape-content">
+                    <div class="mixtape-title">{{ mixtape.title }}</div>
+                    {% if mixtape.subtitle %}
+                    <div class="mixtape-subtitle">{{ mixtape.subtitle }}</div>
+                    {% endif %}
+                    {% if mixtape.author %}
+                    <div class="mixtape-author">by {{ mixtape.author }}</div>
+                    {% endif %}
+                    {% if mixtape.description %}
+                    <div class="mixtape-description">{{ mixtape.description }}</div>
+                    {% endif %}
+                    <div class="mixtape-actions">
+                        <a href="{{ url_for('main.mixtape_m3u', mixtape_id=mixtape.mixtape_id) }}" class="btn btn-m3u">⬇️ Download M3U</a>
+                        <a href="{{ url_for('main.mixtape_zip', mixtape_id=mixtape.mixtape_id) }}" class="btn btn-zip">📦 Download ZIP</a>
+                    </div>
+                    <div style="margin-bottom: 15px; display: flex;">
+                        <button class="btn btn-play" data-m3u-url="{{ url_for('main.mixtape_m3u', mixtape_id=mixtape.mixtape_id) }}" data-mixtape-id="{{ mixtape.mixtape_id }}">▶️ Play in Browser</button>
+                    </div>
+                    
+                    {% if mixtape.tracks %}
+                    <details class="playlist-details">
+                        <summary>📋 Playlist ({{ mixtape.tracks|length }} tracks)</summary>
+                        <div class="playlist-tracks">
+                            {% for track in mixtape.tracks|sort(attribute='sequence') %}
+                            <div class="track-item">
+                                <span class="track-number">{{ loop.index }}.</span>
+                                <span class="track-title"><strong>{{ track.title }}</strong></span>
+                                {% if track.author %}<span class="track-artist"> - {{ track.author }}</span>{% endif %}
+                                {% if track.duration %}<span class="track-duration">({{ (track.duration // 60)|int }}:{{ "%02d"|format(track.duration % 60) }})</span>{% endif %}
+                                <a href="{{ url_for('main.download_track', track_id=track.track_id) }}" class="track-download" title="Download track">⬇️</a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </details>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="background: white; border-radius: 12px; padding: 60px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <div class="empty-state" style="color: #999; margin: 0;">
+                <p style="font-size: 3em; margin-bottom: 15px;">🎶</p>
+                <p>No mixtapes available yet. Check back soon!</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="page-footer">
+            {% if current_user.is_authenticated %}
+                {% if current_user.is_admin %}
+                <a href="{{ url_for('main.admin') }}" class="footer-link" style="margin-right: 20px; font-size: 0.9em;">Admin</a>
+                {% endif %}
+                <a href="{{ url_for('main.logout') }}" class="footer-link" style="font-size: 0.9em;">Logout</a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Sticky Player Window -->
+    <div class="sticky-player" id="sticky-player">
+        <div class="sticky-player-container">
+            <div class="sticky-player-title" id="sticky-player-title">Now Playing...</div>
+            <div class="sticky-player-controls">
+                <button class="player-btn player-prev" id="sticky-player-prev">⏮️</button>
+                <button class="sticky-skip-btn" id="sticky-player-rewind">⏪ 15s</button>
+                <button class="player-btn player-play-pause" id="sticky-player-play-pause">⏸️</button>
+                <button class="sticky-skip-btn" id="sticky-player-forward">⏩ 15s</button>
+                <button class="player-btn player-next" id="sticky-player-next">⏭️</button>
+            </div>
+            <div class="sticky-player-progress" id="sticky-player-progress">
+                <div class="sticky-player-progress-bar" id="sticky-player-progress-bar"></div>
+            </div>
+            <div class="sticky-player-info">
+                <span id="sticky-player-track-info">Track 1 of 1</span>
+                <span id="sticky-player-time">0:00 / 0:00</span>
+            </div>
+            <div class="sticky-volume-row">
+                <span style="font-size: 0.85em; color: #666;">🔊</span>
+                <input type="range" class="volume-control" id="sticky-player-volume" min="0" max="100" value="10" style="flex: 1; height: 4px; cursor: pointer;">
+                <span style="font-size: 0.8em; color: #999; min-width: 28px;" id="sticky-player-volume-percent">10%</span>
+            </div>
+        </div>
+    </div>
+    
+    <audio id="playlist-player" style="display: none;"></audio>
+    
+    <script>
+        const playBtn = document.querySelectorAll('.btn-play');
+        const audioPlayer = document.getElementById('playlist-player');
+        const stickyPlayer = document.getElementById('sticky-player');
+        let currentPlayingButton = null;
+        let currentPlaylist = [];
+        let currentTrackIndex = 0;
+        let currentMixtapeId = null;
+        
+        // Set initial volume to 10%
+        audioPlayer.volume = 0.1;
+        
+        function formatTime(seconds) {
+            if (!seconds || isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        function updateStickyPlayerDisplay() {
+            if (currentPlaylist.length === 0) return;
+            
+            const currentTrack = currentPlaylist[currentTrackIndex];
+            document.getElementById('sticky-player-title').textContent = currentTrack.title;
+            document.getElementById('sticky-player-track-info').textContent = `Track ${currentTrackIndex + 1} of ${currentPlaylist.length}`;
+            
+            // Update button states
+            document.getElementById('sticky-player-prev').disabled = currentTrackIndex === 0;
+            document.getElementById('sticky-player-next').disabled = currentTrackIndex === currentPlaylist.length - 1;
+        }
+        
+        function highlightCurrentTrack(mixtapeId, trackIndex) {
+            // Remove highlight from all tracks in this mixtape
+            document.querySelectorAll(`.mixtape-card[data-mixtape-id="${mixtapeId}"] .track-item`).forEach(item => {
+                item.classList.remove('now-playing-track');
+            });
+            
+            // Highlight current track
+            const allTracks = document.querySelectorAll(`.mixtape-card[data-mixtape-id="${mixtapeId}"] .track-item`);
+            if (allTracks[trackIndex]) {
+                allTracks[trackIndex].classList.add('now-playing-track');
+            }
+        }
+        
+        async function parseM3U(m3uUrl) {
+            try {
+                const response = await fetch(m3uUrl);
+                const text = await response.text();
+                const lines = text.split('\n');
+                const tracks = [];
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    // Look for EXTINF lines which contain track metadata
+                    if (line.startsWith('#EXTINF:')) {
+                        const url = lines[i + 1]?.trim();
+                        if (url && !url.startsWith('#')) {
+                            // Extract duration and title from EXTINF line
+                            const match = line.match(/#EXTINF:([^,]*),(.*)/);
+                            const title = match ? match[2] : 'Unknown Track';
+                            tracks.push({ url, title, duration: parseInt(match[1]) || 0 });
+                            i++; // Skip the URL line since we already processed it
+                        }
+                    }
+                }
+                
+                return tracks;
+            } catch (error) {
+                console.error('Error parsing M3U:', error);
+                return [];
+            }
+        }
+        
+        function playTrack(mixtapeId, trackIndex) {
+            if (trackIndex >= 0 && trackIndex < currentPlaylist.length) {
+                const track = currentPlaylist[trackIndex];
+                audioPlayer.src = track.url;
+                audioPlayer.play();
+                updateStickyPlayerDisplay();
+                highlightCurrentTrack(mixtapeId, trackIndex);
+            }
+        }
+        
+        function showStickyPlayer() {
+            stickyPlayer.classList.add('active');
+            document.body.classList.add('player-open');
+        }
+        
+        function hideStickyPlayer() {
+            stickyPlayer.classList.remove('active');
+            document.body.classList.remove('player-open');
+        }
+        
+        playBtn.forEach(btn => {
+            btn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const m3uUrl = this.getAttribute('data-m3u-url');
+                const mixtapeId = this.getAttribute('data-mixtape-id');
+                
+                // If already playing this mixtape, toggle pause
+                if (currentPlayingButton === this && audioPlayer.src) {
+                    if (audioPlayer.paused) {
+                        audioPlayer.play();
+                        this.textContent = '⏸️ Pause';
+                        this.classList.add('playing');
+                        document.getElementById('sticky-player-play-pause').textContent = '⏸️';
+                    } else {
+                        audioPlayer.pause();
+                        this.textContent = '▶️ Play in Browser';
+                        this.classList.remove('playing');
+                        document.getElementById('sticky-player-play-pause').textContent = '▶️';
+                    }
+                } else {
+                    // Stop previous playback
+                    if (currentPlayingButton) {
+                        currentPlayingButton.textContent = '▶️ Play in Browser';
+                        currentPlayingButton.classList.remove('playing');
+                    }
+                    
+                    // Parse M3U and start playback
+                    const tracks = await parseM3U(m3uUrl);
+                    if (tracks.length > 0) {
+                        currentPlaylist = tracks;
+                        currentTrackIndex = 0;
+                        currentMixtapeId = mixtapeId;
+                        showStickyPlayer();
+                        playTrack(mixtapeId, 0);
+                        this.textContent = '⏸️ Pause';
+                        this.classList.add('playing');
+                        currentPlayingButton = this;
+                        document.getElementById('sticky-player-play-pause').textContent = '⏸️';
+                    }
+                }
+            });
+        });
+        
+        // Update progress bar and time display
+        audioPlayer.addEventListener('timeupdate', function() {
+            const progressBar = document.getElementById('sticky-player-progress-bar');
+            const timeEl = document.getElementById('sticky-player-time');
+            const percent = (this.currentTime / this.duration) * 100;
+            if (progressBar) progressBar.style.width = percent + '%';
+            if (timeEl) timeEl.textContent = `${formatTime(this.currentTime)} / ${formatTime(this.duration)}`;
+        });
+        
+        // Allow seeking by clicking on progress bar
+        document.getElementById('sticky-player-progress').addEventListener('click', function(e) {
+            const rect = this.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            audioPlayer.currentTime = percent * audioPlayer.duration;
+        });
+        
+        // Handle previous track button
+        document.getElementById('sticky-player-prev').addEventListener('click', function() {
+            if (currentTrackIndex > 0) {
+                currentTrackIndex--;
+                playTrack(currentMixtapeId, currentTrackIndex);
+            }
+        });
+        
+        // Handle next track button
+        document.getElementById('sticky-player-next').addEventListener('click', function() {
+            if (currentTrackIndex < currentPlaylist.length - 1) {
+                currentTrackIndex++;
+                playTrack(currentMixtapeId, currentTrackIndex);
+            }
+        });
+        
+        // Handle skip backward button (15 seconds)
+        document.getElementById('sticky-player-rewind').addEventListener('click', function() {
+            audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 15);
+        });
+        
+        // Handle skip forward button (15 seconds)
+        document.getElementById('sticky-player-forward').addEventListener('click', function() {
+            audioPlayer.currentTime = Math.min(audioPlayer.duration, audioPlayer.currentTime + 15);
+        });
+        
+        // Handle play/pause button in sticky player
+        document.getElementById('sticky-player-play-pause').addEventListener('click', function() {
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+                this.textContent = '⏸️';
+                if (currentPlayingButton) {
+                    currentPlayingButton.textContent = '⏸️ Pause';
+                    currentPlayingButton.classList.add('playing');
+                }
+            } else {
+                audioPlayer.pause();
+                this.textContent = '▶️';
+                if (currentPlayingButton) {
+                    currentPlayingButton.textContent = '▶️ Play in Browser';
+                    currentPlayingButton.classList.remove('playing');
+                }
+            }
+        });
+        
+        // Auto-advance to next track when current one ends
+        audioPlayer.addEventListener('ended', function() {
+            if (currentTrackIndex < currentPlaylist.length - 1) {
+                currentTrackIndex++;
+                playTrack(currentMixtapeId, currentTrackIndex);
+            } else {
+                // Playlist finished
+                if (currentPlayingButton) {
+                    currentPlayingButton.textContent = '▶️ Play in Browser';
+                    currentPlayingButton.classList.remove('playing');
+                }
+                hideStickyPlayer();
+            }
+        });
+        
+        // Handle volume control
+        document.getElementById('sticky-player-volume').addEventListener('input', function() {
+            const volumePercent = parseInt(this.value);
+            audioPlayer.volume = volumePercent / 100;
+            document.getElementById('sticky-player-volume-percent').textContent = volumePercent + '%';
+        });
+    </script>
+
